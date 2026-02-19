@@ -1,0 +1,5 @@
+# ignore folder points
+points/
+
+# ignore folder who's name is start with rosbag
+rosbag*/
