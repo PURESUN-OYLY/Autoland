@@ -3,3 +3,6 @@ points/
 
 # ignore folder who's name is start with rosbag
 rosbag*/
+
+# ignore folder who's name is start with __pycache
+__pycache__/
