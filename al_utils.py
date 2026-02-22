@@ -216,6 +216,11 @@ def get_target_pcd(dir, pcd_file_id):
 
 # copy pcd file to used_pcd folder if it doesn't exist or is different file
 def copy_used_pcd(used_pcd_path, pcd_file_path):
+    """
+    Copy pcd file to used_pcd folder if it doesn't exist or is different file\n
+    :param used_pcd_path: the path to the used pcd files\n
+    :param pcd_file_path: the path to the pcd file to be copied\n
+    """
     print('Copy pcd file to used_pcd folder...')
     if not os.path.exists(os.path.join(os.getcwd(), used_pcd_path)):
         print('Create used_pcd folder')
@@ -243,6 +248,63 @@ def copy_used_pcd(used_pcd_path, pcd_file_path):
             with open(os.path.join(os.getcwd(), used_pcd_path, os.path.basename(pcd_file_path)), 'wb') as destination:
                 # copy the contents of the source file to the destination file
                 destination.write(source.read())
+
+
+
+def get_pcd_file_path(dir_src, used_pcd_id=-1, dir_used_pcd=''):
+    """
+    Get the path to the pcd file\n
+    :param dir_src: the path to the source pcd files\n
+    :param used_pcd_id: the id of the pcd file to be used, if used_pcd_id is -1, use the first pcd file in dir_src\n
+    :param dir_used_pcd: the path to the used pcd files\n
+    :return: the path to the target pcd file\n
+    """
+    # get current working directory and find pcd files
+    print('Working directory:', os.getcwd())
+    path_points = os.path.join(os.getcwd(), dir_src)
+
+    pcd_file = ''
+
+    # Check if the directory exists
+    if not os.path.exists(path_points):
+        print(f'Directory {path_points} does not exist, use used_pcd instead.')
+
+        used_path = os.path.join(os.getcwd(), dir_used_pcd)
+        # print(f'used pcd path:{used_path}')
+        if not os.path.exists(used_path):
+            print("There no used pcd file, can not go on!")
+            return pcd_file
+        
+        # count the number of pcd files and total size
+        pcd_file_cnt = 0
+        files = os.listdir(used_path)
+        total_size = 0
+        pcd_files = []
+
+        # count the number of pcd files
+        for file in files:
+            if file.endswith('.pcd'):
+                pcd_file_cnt += 1
+                pcd_files.append(file)
+                total_size += os.path.getsize(os.path.join(used_path, file))
+        
+        # print the number of pcd files and total size
+        print(f'There are {pcd_file_cnt} pcd files in {used_path}, total size is {total_size / 1024 / 1024:.2f} MB')
+
+        pcd_file = os.path.join(used_path, pcd_files[0])
+        print(f'Using pcd file: {pcd_file}, basename: {os.path.basename(pcd_file)}')
+
+    else:
+        if used_pcd_id < 0:
+            used_pcd_id = 0
+        # get target pcd file
+        pcd_file = get_target_pcd(path_points, used_pcd_id)
+        print(f'Using No.{used_pcd_id} pcd file: {pcd_file}, basename: {os.path.basename(pcd_file)}')
+
+        # copy pcd file to used_pcd, the folder will be tracked in git
+        copy_used_pcd(dir_used_pcd, pcd_file)
+    
+    return pcd_file
 
 
 # calculate the md5 of a file
