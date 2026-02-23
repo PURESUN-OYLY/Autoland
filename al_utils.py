@@ -69,6 +69,15 @@ def show_point_cloud(pcd, name = "Point Cloud"):
     """
     o3d.visualization.draw_geometries([pcd], window_name=name)
 
+def show_geometries(geometries, name = "Geometries"):
+    """
+    Show geometries\n
+    :param geometries: the geometries to be shown\n
+    :param name: the name of the window\n
+    :return: None\n
+    """
+    o3d.visualization.draw_geometries(geometries, window_name=name)
+
 # Change the color of point cloud
 def change_color(pcd, ids=[], color=[0.5, 0.5, 0.5]):
     """
@@ -157,6 +166,88 @@ def add_origin(pcd, color=[1, 0, 0]):
     origin_pcd = add_color(origin_pcd, color=color)
 
     return merge_pcds([pcd, origin_pcd])
+
+def create_coordinate(size=1.0, origin=[0.0, 0.0, 0.0]):
+    # Define the points of the coordinate system
+    """
+    Create coordinate system\n
+    :param size: the size of the coordinate system\n
+    :param origin: the origin of the coordinate system\n
+    :return: the coordinate system\n
+    """
+    points = np.array([[0.0, 0.0, 0.0], [size, 0.0, 0.0], [0.0, size, 0.0], [0.0, 0.0, size]], dtype=np.float64)
+    lines = np.array([[0, 1], [0, 2], [0, 3]], dtype=np.int32)
+    colors = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+
+    # Create the line set
+    line_set = o3d.geometry.LineSet()
+    line_set.points = o3d.utility.Vector3dVector(points)
+    line_set.lines = o3d.utility.Vector2iVector(lines)
+    line_set.colors = o3d.utility.Vector3dVector(colors)
+
+    return line_set
+
+# Create line set
+def create_line_set(points, color = [0.5, 0.5, 0.5]):
+    """
+    Create line set from point list
+    :param points: list of points
+    :param colors: list of colors
+    :return: line set
+    """
+    points = np.array(points, dtype=np.float64)
+    lines = np.array([[i, i + 1] for i in range(len(points) - 1)], dtype=np.int32)
+    colors = np.ones((len(lines), 3)) * color
+    line_set = o3d.geometry.LineSet()
+    line_set.points = o3d.utility.Vector3dVector(points)
+    line_set.lines = o3d.utility.Vector2iVector(lines)
+    line_set.colors = o3d.utility.Vector3dVector(colors)
+    return line_set
+
+
+# Smooth point cloud
+def smooth_pcd_path(pcd, window_size=3):
+    """
+    Smooth 3D points using a moving average window
+    :param points: the points to be smoothed
+    :param window_size: the size of the moving average window
+    :return: the smoothed points
+    """
+
+    # input check
+    if window_size % 2 == 0:
+        print("Warning: window size must be odd!")
+        return pcd
+    
+    if len(pcd.points) < window_size:
+        print("Warning: window size must be smaller than the number of points!")
+        return pcd
+    
+    # Convert to numpy array
+    points = np.array(pcd.points)
+    smoothed_points = np.zeros_like(points)
+    
+    # Calculate the half window size
+    half_window = window_size // 2
+    
+    # Smooth the points eatch axis(x,y,z)
+    for dim in range(3):  # 0=x,1=y,2=z
+        # smooth the beginning points (first half_window points): smooth them by first full window size points
+        for i in range(half_window):
+            smoothed_points[i, dim] = np.mean(points[:i+half_window+1, dim])
+        
+        # smooth the middle points
+        for i in range(half_window, len(points)-half_window):
+            smoothed_points[i, dim] = np.mean(points[i-half_window:i+half_window+1, dim])
+        
+        # smooth the last half_window points, smooth them by last full winfow size points
+        for i in range(len(points)-half_window, len(points)):
+            smoothed_points[i, dim] = np.mean(points[i-half_window:, dim])
+    
+    # Convert back to Open3D point cloud
+    pcd.points = o3d.utility.Vector3dVector(smoothed_points)
+    return pcd
+
 
 
 def check_pcd_source_dir(dir):
